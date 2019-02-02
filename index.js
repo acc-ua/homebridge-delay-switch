@@ -18,6 +18,21 @@ function delaySwitch(log, config) {
     this.timer;
     this.switchOn = false;
     this.motionTriggered = false;
+    this.countMotionsTrigger = config['countMotionsTriggered']|| false;
+    this.countMotionsTriggerPeriod = config['countMotionsTriggeredPeriod']|| 604800; //week by default
+    
+    this.cacheDirectory = HomebridgeAPI.user.persistPath();
+    this.storage = require('node-persist');
+    this.storage.initSync({dir:this.cacheDirectory, forgiveParseErrors: true});
+    
+  /* if (this.countMotionsTrigger) {
+        var triggerCount = this.storage.getItemSync(this.name);
+        if((cachedState === undefined) || (cachedState === false)) {
+            this._service.setCharacteristic(Characteristic.On, false);
+        } else {
+            this._service.setCharacteristic(Characteristic.On, true);
+        }
+  }*/
 
 }
 
@@ -75,6 +90,10 @@ delaySwitch.prototype.setOn = function (on, callback) {
           this.switchOn = false;
             
           if (!this.disableSensor) {
+              if (this.countMotionsTrigger) {
+                    var triggerCount = this.storage.getItemSync(this.name);
+                	this.storage.setItemSync(this.name, triggerCount+1);
+               }
               this.motionTriggered = true;
               this.motionService.getCharacteristic(Characteristic.MotionDetected).updateValue(true);
               this.log('Triggering Motion Sensor');
